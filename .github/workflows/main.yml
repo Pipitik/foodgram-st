@@ -91,16 +91,3 @@ jobs:
           context: ./frontend/
           push: true
           tags: pipitik/foodgram_frontend:latest
-
-  send_message:
-    runs-on: ubuntu-latest
-    needs:
-      - build_and_push_to_docker_hub
-      - build_frontend_and_push_to_docker_hub
-    steps:
-      - name: Send message
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: Образы успешно загружены!
