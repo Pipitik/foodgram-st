@@ -138,5 +138,12 @@ dmypy.json
 .idea
 .vscode
 
+# Visual Studio
+*.pyproj*
+*.sln
+.vs
+bin/
+obj/
+
 static/
 media/

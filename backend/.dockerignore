@@ -1,0 +1,10 @@
+.vs
+bin
+env
+venv
+obj
+*.sln
+*.pyproj*
+*.sqlite3
+static
+Dockerfile
