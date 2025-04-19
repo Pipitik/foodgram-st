@@ -1,14 +1,8 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 class IsAuthorOrReadOnly(BasePermission):
-    """
-    Разрешение, позволяющее редактировать объект только его автору.
-    """
+    """Разрешение, позволяющее редактировать объект только его автору."""
 
     def has_object_permission(self, request, view, obj):
-        # Разрешить только чтение для всех
-        if request.method in ('GET', 'HEAD', 'OPTIONS'):
-            return True
-        # Разрешить изменение только автору
-        return obj.author == request.user
+        return request.method in SAFE_METHODS or obj.author == request.user
