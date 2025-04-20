@@ -32,10 +32,7 @@ class UserSerializer(BaseUserSerializer):
 
     def get_is_subscribed(self, user):
         request_user = self.context["request"].user
-        return request_user.is_authenticated and Subscription.objects.filter(
-            author=user,
-            follower=request_user
-        ).exists()
+        return request_user.is_authenticated and user.author.filter(follower=request_user).exists()
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -226,68 +223,47 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return data
 
     def to_representation(self, instance):
-        author = instance.author
-        recipes_limit = self.context["request"].query_params.get("recipes_limit")
-        recipes = author.recipes.all()
-        if recipes_limit:
-            recipes = recipes[:int(recipes_limit)]
-
-        return {
-            "id": author.id,
-            "username": author.username,
-            "first_name": author.first_name,
-            "last_name": author.last_name,
-            "email": author.email,
-            "is_subscribed": True,
-            "avatar": author.avatar.url if author.avatar else None,
-            "recipes_count": author.recipes.count(),
-            "recipes": ShortRecipeSerializer(recipes, many=True).data,
-        }
+        data = SubscribedUserSerializer(instance.author, context=self.context).data
+        data["is_subscribed"] = True
+        return data
 
 
-class FavoriteSerializer(serializers.ModelSerializer):
+class BaseUserRecipeSerializer(serializers.ModelSerializer):
+    duplicate_error_message = "Элемент уже существует."
+
     class Meta:
+        abstract = True
+        fields = ("user", "recipe")
+        read_only_fields = ("user",)
+
+    def validate(self, data):
+        if not data.get("recipe"):
+            raise serializers.ValidationError(
+                {"detail": 'Поле "recipe" не может быть пустым.'}
+            )
+
+        user = self.context["request"].user
+        recipe = data["recipe"]
+
+        if self.Meta.model.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError(
+                {"detail": self.duplicate_error_message}
+            )
+        return data
+
+    def to_representation(self, instance):
+        return ShortRecipeSerializer(instance.recipe).data
+
+
+class FavoriteSerializer(BaseUserRecipeSerializer):
+    duplicate_error_message = "Рецепт уже добавлен в избранное."
+
+    class Meta(BaseUserRecipeSerializer.Meta):
         model = Favorite
-        fields = ("user", "recipe")
-        read_only_fields = ("user",)
-
-    def validate(self, data):
-        if not data.get("recipe"):
-            raise serializers.ValidationError(
-                {"detail": 'Поле "recipe" не может быть пустым.'}
-            )
-
-        user = self.context["request"].user
-        recipe = data["recipe"]
-        if Favorite.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError(
-                {"detail": "Рецепт уже добавлен в избранное."}
-            )
-        return data
-
-    def to_representation(self, instance):
-        return ShortRecipeSerializer(instance.recipe).data
 
 
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    class Meta:
+class ShoppingCartSerializer(BaseUserRecipeSerializer):
+    duplicate_error_message = "Рецепт уже добавлен в корзину."
+
+    class Meta(BaseUserRecipeSerializer.Meta):
         model = ShoppingCart
-        fields = ("user", "recipe")
-        read_only_fields = ("user",)
-
-    def validate(self, data):
-        if not data.get("recipe"):
-            raise serializers.ValidationError(
-                {"detail": 'Поле "recipe" не может быть пустым.'}
-            )
-
-        user = self.context["request"].user
-        recipe = data["recipe"]
-        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError(
-                {"detail": "Рецепт уже добавлен в корзину."}
-            )
-        return data
-
-    def to_representation(self, instance):
-        return ShortRecipeSerializer(instance.recipe).data

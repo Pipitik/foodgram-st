@@ -45,14 +45,12 @@ class User(AbstractUser):
 
     first_name = models.CharField(
         verbose_name="Имя",
-        max_length=FIRST_NAME_MAX_LENGTH,
-        null=False
+        max_length=FIRST_NAME_MAX_LENGTH
     )
 
     last_name = models.CharField(
         verbose_name="Фамилия",
-        max_length=LAST_NAME_MAX_LENGTH,
-        null=False
+        max_length=LAST_NAME_MAX_LENGTH
     )
 
     avatar = models.ImageField(

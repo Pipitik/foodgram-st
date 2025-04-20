@@ -136,7 +136,7 @@ class RecipeIngredient(models.Model):
         )
 
 
-class UserRecipeBase(models.Model):
+class BaseUserRecipe(models.Model):
     """Базовый класс для Favorite и ShoppingCart."""
 
     user = models.ForeignKey(
@@ -155,10 +155,11 @@ class UserRecipeBase(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ['user', 'recipe']
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "recipe"],
-                name="unique_user_recipe"
+                name="%(app_label)s_%(class)s_unique_user_recipe"
             )
         ]
 
@@ -166,17 +167,17 @@ class UserRecipeBase(models.Model):
         return f"{self.user.username} -> {self.recipe.name}"
 
 
-class Favorite(UserRecipeBase):
+class Favorite(BaseUserRecipe):
     """Модель избранных рецептов."""
 
-    class Meta:
+    class Meta(BaseUserRecipe.Meta):
         verbose_name = "Избранное"
         verbose_name_plural = "Избранные"
 
 
-class ShoppingCart(UserRecipeBase):
+class ShoppingCart(BaseUserRecipe):
     """Модель корзины покупок."""
 
-    class Meta:
+    class Meta(BaseUserRecipe.Meta):
         verbose_name = "Корзина покупок"
         verbose_name_plural = "Корзины покупок"
